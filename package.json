@@ -1,0 +1,14 @@
+{
+    "name": "com.habby.habbyiap",
+    "version": "1.0.0",
+    "displayName": "Habby IAP",
+    "description": "iap",
+    "unity": "2019.1",
+    "keywords": [
+      "HabbyIAP",
+      "Habby"
+    ],
+    "dependencies":{
+      "com.unity.purchasing": "4.1.5"
+    }
+}

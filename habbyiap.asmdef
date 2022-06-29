@@ -1,0 +1,17 @@
+{
+    "name": "habbyiap",
+    "references": [
+        "UnityEngine.Purchasing",
+        "UnityEngine.Purchasing.Apple",
+        "UnityEngine.Purchasing.Stores"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
