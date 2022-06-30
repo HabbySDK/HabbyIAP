@@ -162,7 +162,7 @@ namespace Habby.Business
     {
         public RequestPathObject(string server, string pPath) : base(server, pPath)
         {
-            AddKeyword("SDKVersion", IAPManager.SDKVersion);
+            
         }
     }
 }

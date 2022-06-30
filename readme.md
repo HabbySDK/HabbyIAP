@@ -33,6 +33,7 @@ Assets/HabbySDK/HabbyIAP/Example/IAPSample.unity
         {
             serverUrl = "http://test-business.kinjarun.com",
             userId = "33225478",
+            defaultActiveStoreId = "com.habby.gem_1",
         };
 
         Habby.Business.IAPManager.Instance.InitIAP(tsetting,productList);

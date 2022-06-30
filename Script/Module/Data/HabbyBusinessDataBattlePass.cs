@@ -20,7 +20,8 @@
     public class BattlePassAddition
     {
         public string gameProductId;
-        
+
+        public int triggerPerValue;//触发间隔
         public int maxTriggerNums;//最大可领取次数
         public int triggerTimes;//已经触发了几次
         public int receiveTimes;//已经领取了几次
@@ -49,7 +50,7 @@
             public string type;// 一般前30级为normal，后面为additional(补充奖励)
             public long startValue;// 开启当前等级所需的经验
 
-            public PassItem[] pass;
+            public PassItem[] passes;
         }
 
         #endregion
@@ -59,10 +60,12 @@
         public int nextLevelGems; //开启下一层需要的钻石数
         public long startTime;// 开始时间
         public long endTime; // 结束时间
+        public long countdownUntil;//倒计时结束
         public long currentValue;// 当前经验
         public int currentLevel;// 当前等级
         public bool purchased;// 是否已经购买
 
+        public string[] purchaseGameProductIds; //已付费的商品id
         public BattlePassAddition[] additionLevel;///额外的层级。付费的battlePass大于30级有额外的循环奖励
         public BattleLevel[] levels; //级别列表
         public BattleProduct[] gameProducts;//包含的商品列表

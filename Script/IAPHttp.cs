@@ -1,4 +1,5 @@
 
+using Habby.Tool;
 using Habby.Tool.Http;
 namespace Habby.Business
 {
@@ -7,6 +8,7 @@ namespace Habby.Business
         public IAPHttp()
         {
             Tag = "IAPHttp";
+            SetPublicHeader("SDKVersion",IAPManager.SDKVersion);
         }
     }
 }

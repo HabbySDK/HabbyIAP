@@ -15,6 +15,7 @@ namespace Habby.Business
             var uid = IAPHttp.EscapeURL(Setting.userId);
             var tid = IAPHttp.EscapeURL(id);
             RequestPathObject treqpath = new RequestPathObject(Setting.serverUrl, $"users/{uid}/activities/{tid}");
+            treqpath.AddKeyword("currency",Setting.defaultActiveStoreId);
 
             IAPHttp.Instance.StartGetResponse<DefaultResponse<ActivityInfo>>(treqpath.GetRequestUrl(), null,
                 (response, error, errorcode) =>

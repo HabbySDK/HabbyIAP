@@ -38,6 +38,10 @@ namespace Habby.Business
     {
         public string serverUrl;
         public string userId;
+        /// <summary>
+        /// This ID is used to get the currency type
+        /// </summary>
+        public string defaultActiveStoreId;
     }
 
     public enum PurchaseProcessType
@@ -108,7 +112,7 @@ namespace Habby.Business
     public delegate void PurchaseProcessStart();
     public delegate void PurchaseProcessEnd(PurchaseCode purchaseCode,int statuCode, ProductObject last);
     //Product
-    public class IAPManager : MonoBehaviour
+    public class IAPManager : MonoBehaviour, IClientData
     {
         public const string SDKVersion = "1.0";
         
@@ -184,9 +188,12 @@ namespace Habby.Business
 
 
         public event PurchaseEvent OnPurchaseComplete;
-
         public event PurchaseProcessStart OnPurchaseStart;
         public event PurchaseProcessEnd OnPurchaseEnd;
+
+        public event Action OnInitComplete;
+        public event Action OnRestoreComplete;
+        public bool InitedPurchase => iap?.InitedPurchase ?? false;
 
         #region module
 
@@ -230,9 +237,26 @@ namespace Habby.Business
             Setting = pSetting;
             
             IAPCahceManager.Instance.Init();
-
+            
+            InitClientData();
             InitModule();
             InitIAP(pList, pIap);
+        }
+
+        void InitClientData()
+        {
+            var tfields = new Dictionary<string, object>()
+            {
+                {"deviceId", SystemInfo.deviceUniqueIdentifier},
+                {"appVersion", Application.version},
+                {"osVersion", SystemInfo.operatingSystem},
+                {"systemLanguage", Application.systemLanguage.ToString()},
+                {"appBundle", Application.identifier},
+                {"deviceModel", UnityEngine.SystemInfo.deviceModel},
+            };
+
+            SetClientFields(tfields);
+            IAPHttp.Instance.AddCustomHeader("ClientData",Instance.customClientData);
         }
 
         void InitModule()
@@ -260,12 +284,12 @@ namespace Habby.Business
             
             iap.OnInitComplete += () =>
             {
-
+                OnInitComplete?.Invoke();
             };
 
             iap.OnRestoreComplete += () =>
             {
-
+                OnRestoreComplete?.Invoke();
             };
 
             iap.OnPurchaseSuccess += (item) =>
@@ -287,7 +311,6 @@ namespace Habby.Business
             iap.Init(pList);
         }
 
-        
         private int waitValidatineTime = 0;
         IEnumerator WaitReValidatino(Product pItem,ProductObject pObj)
         {
@@ -427,6 +450,10 @@ namespace Habby.Business
         
         public Product WithID(string pId)
         {
+            if (!iap.InitedPurchase)
+            {
+                IAPLog.LogError($" iap.InitedPurchase = {iap.InitedPurchase}");
+            }
             return iap.WithID(pId);
         }
         
@@ -538,5 +565,23 @@ namespace Habby.Business
             IAPLog.Log("EndPurchase");
         }
         
+        
+        public Dictionary<string, object> customClientData { get; private set; } = new Dictionary<string, object>();
+        public void SetClientFields(Dictionary<string, object> pFields)
+        {
+            if (pFields == null) return;
+            foreach (var item in pFields)
+            {
+                if (customClientData.ContainsKey(item.Key))
+                {
+                    customClientData[item.Key] = item.Value;
+                }
+                else
+                {
+                    customClientData.Add(item.Key, item.Value);
+                }
+            }
+        }
+
     }
 }
