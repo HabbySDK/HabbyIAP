@@ -17,7 +17,7 @@ namespace Habby.Business
         {
             var uid = IAPHttp.EscapeURL(Setting.userId);
 
-            RequestPathObject treqpath = new RequestPathObject(Setting.serverUrl, $"users/{uid}/piggyBanks");
+            RequestPathObject treqpath = new RequestPathObject($"users/{uid}/piggyBanks");
 
             IAPHttp.Instance.StartGetResponse<DefaultResponse<PiggyBankInfo[]>>(treqpath.GetRequestUrl(), null,
                 (response, error, errorcode) => { CallOnCompleteAndCache($"{productsKey}-listInfos" ,response, onComplete, errorcode, error); }, 60,

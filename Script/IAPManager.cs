@@ -5,6 +5,7 @@ using UnityEngine.Purchasing;
 
 using Newtonsoft.Json;
 using System.Collections;
+using System.Globalization;
 using System.IO;
 using Habby.Tool;
 using Habby.Business;
@@ -50,6 +51,7 @@ namespace Habby.Business
         getOrderId,
         waitValidatine,
     }
+    
 
     public class IAPLocalData
     {
@@ -111,65 +113,13 @@ namespace Habby.Business
     public delegate void PurchaseEvent(Product product,ProductObject last);
     public delegate void PurchaseProcessStart();
     public delegate void PurchaseProcessEnd(PurchaseCode purchaseCode,int statuCode, ProductObject last);
+    public delegate void ValidatinoSuccess(ProductOrder item, ValidatinoData responseData);
     //Product
     public class IAPManager : MonoBehaviour, IClientData
     {
         public const string SDKVersion = "1.0";
         
-        private static Dictionary<string, GameProductItem> cacheGameProduct = new Dictionary<string, GameProductItem>();
-        public static void GetAllProducts(string userId, string url, HttpEvent<GameProductItem[]> onComplete)
-        {
-            var uid = IAPHttp.EscapeURL(userId);
-            
-            
-            RequestPathObject treqpath = new RequestPathObject(url,$"users/{uid}/gameProducts");
-            treqpath.AddKeyword("storeProductIds","all");
-            treqpath.AddKeyword("giftpackProductIds","all");
-            treqpath.AddKeyword("piggyBankProductIds","all");
-            treqpath.AddKeyword("battlePassProductIds","all");
-            treqpath.AddKeyword("ordinaryProductIds","all");
-            treqpath.AddKeyword("showAllProducts","true");
-            
-            IAPHttp.Instance.StartGetResponse<DefaultResponse<GameProductItem[]>>(treqpath.GetRequestUrl(), null,(response,error,errorcode) =>
-            {
-                BusinessBase.CallOnCompleteAndCache("allGameProducts",response,onComplete,errorcode,error);
-
-                if (response != null)
-                {
-                    AddCache(response.data);
-                }
-            },60,IAPHttp.IsParamsValid(uid));
-        }
-
-        public static GameProductItem GetProductFromCache(string pId)
-        {
-            if (!cacheGameProduct.ContainsKey(pId)) return null;
-
-            return cacheGameProduct[pId];
-        }
-
-        static void AddCache(GameProductItem[] pItems)
-        {
-            if(pItems == null || pItems.Length == 0) return;
-
-            foreach (var item in pItems)
-            {
-                if(item == null || string.IsNullOrEmpty(item.gameProductId)) continue;
-                if (cacheGameProduct.ContainsKey(item.gameProductId))
-                {
-                    cacheGameProduct[item.gameProductId] = item;
-                }
-                else
-                {
-                    cacheGameProduct.Add(item.gameProductId,item);
-                }
-                
-            }
-        }
-        
-        
         private static IAPManager _Instance;
-
         public static IAPManager Instance
         {
             get
@@ -190,7 +140,7 @@ namespace Habby.Business
         public event PurchaseEvent OnPurchaseComplete;
         public event PurchaseProcessStart OnPurchaseStart;
         public event PurchaseProcessEnd OnPurchaseEnd;
-
+        public event ValidatinoSuccess OnValidatinoSuccess;
         public event Action OnInitComplete;
         public event Action OnRestoreComplete;
         public bool InitedPurchase => iap?.InitedPurchase ?? false;
@@ -205,6 +155,8 @@ namespace Habby.Business
         public HabbyBusinessActivity Activity { get; private set; }
 
         #endregion
+
+        protected ProductValidationOrderManager ValidationOrderManager { get; private set; }
 
         public IAPSetting Setting { get; private set; } = new IAPSetting();
 
@@ -237,6 +189,9 @@ namespace Habby.Business
             Setting = pSetting;
             
             IAPCahceManager.Instance.Init();
+
+            ValidationOrderManager = new ProductValidationOrderManager();
+            ValidationOrderManager.validationDelgate = OnProductOrderValidatinoComplete;
             
             InitClientData();
             InitModule();
@@ -284,12 +239,26 @@ namespace Habby.Business
             
             iap.OnInitComplete += () =>
             {
-                OnInitComplete?.Invoke();
+                try
+                {
+                    OnInitComplete?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    IAPLog.LogError(e);
+                }
             };
 
             iap.OnRestoreComplete += () =>
             {
-                OnRestoreComplete?.Invoke();
+                try
+                {
+                    OnRestoreComplete?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    IAPLog.LogError(e);
+                }
             };
 
             iap.OnPurchaseSuccess += (item) =>
@@ -310,19 +279,20 @@ namespace Habby.Business
             
             iap.Init(pList);
         }
-
-        private int waitValidatineTime = 0;
-        IEnumerator WaitReValidatino(Product pItem,ProductObject pObj)
-        {
-            waitValidatineTime = 1 + 2 * waitValidatineTime;
-            yield return new WaitForSeconds(waitValidatineTime);
-
-            ValidationObject(pItem, pObj);
-        }
         
-        void RestWaitCount()
+        void OnProductOrderValidatinoComplete(ProductOrder pItem, int code, ValidatinoData response)
         {
-            waitValidatineTime = 0;
+            try
+            {
+                if (code == 0)
+                {
+                    OnValidatinoSuccess?.Invoke(pItem, response);
+                }
+            }
+            catch (Exception e)
+            {
+                IAPLog.LogError(e);
+            }
         }
 
         bool IsCurPurchase(Product pItem)
@@ -342,6 +312,7 @@ namespace Habby.Business
 
         void FinishedPurchase(Product pItem,ProductObject pObj)
         {
+            if (pItem == null) return;
             if (IsSaveProduct(localData.lastProduct, pObj))
             {
                 localData.lastProduct = null;
@@ -370,45 +341,52 @@ namespace Habby.Business
                 IAPLog.LogError(e);
             }
         }
-
-        void ValidationObject(Product pItem,ProductObject pObj)
+        
+        IEnumerator WaitReValidatino(string pOrderId)
         {
-            var tlastProduct = pObj;
-                
-            string tpath = $"{Setting.serverUrl}/orders/{tlastProduct.lastOrderId}?action=payCallback";
+            yield return new WaitForSeconds(1);
+            ValidationObject(pOrderId);
+        }
 
-            var treq = new
+        void ValidationObject(string pOrderId)
+        {
+            ValidationOrderManager.Validation(pOrderId, (orderitem, code, vdata) =>
             {
-                receipt = pItem.receipt,
-                transactionId = pItem.transactionID,
-                channelCode = iap.Channel,
-                currency = pItem.metadata.isoCurrencyCode,
-                currencyMoney = pItem.metadata.localizedPrice,
-                region = iap.GetCountryCode(),
-            };
+                switch ((ValidationStatusCode) code)
+                {
+                    case ValidationStatusCode.httpError:
+                    case ValidationStatusCode.localError:
+                    {
+                        StartCoroutine(WaitReValidatino(orderitem.orderId));
+                    }
+                        break;
+                    default:
+                    {
+                        ProductObject tproductObj = new ProductObject()
+                        {
+                            gameItemId = orderitem.gameItemId,
+                            storeId = orderitem.storeId,
+                            productType = orderitem.productType,
+                            lastOrderId = orderitem.orderId,
+                            data = vdata,
+                        };
 
-                
-            IAPHttp.Instance.StartPatchSend<IAPValidatinoResponse>(tpath, treq,(response,error,errorcode) =>
-            {
-                if (response != null)
-                {
-                    FinishedPurchase(pItem,tlastProduct);
-                   
-                    if (response.code == 0)
-                    {
-                        tlastProduct.data = response.data;
-                        EndPurchase(PurchaseCode.sucess, response.code, tlastProduct);
-                        CallPurchaseDone(pItem,tlastProduct);
+                        Product tproductItem = WithID(orderitem.storeId);
+
+                        FinishedPurchase(tproductItem, tproductObj);
+                        if (code == 0)
+                        {
+                            EndPurchase(PurchaseCode.sucess, code, tproductObj);
+                            CallPurchaseDone(tproductItem, tproductObj);
+                        }
+                        else
+                        {
+                            EndPurchase(PurchaseCode.serverError, code, tproductObj);
+                        }
                     }
-                    else
-                    {
-                        EndPurchase(PurchaseCode.serverError, response.code, tlastProduct);
-                    }
+                        break;
                 }
-                else
-                {
-                    StartCoroutine(WaitReValidatino(pItem, pObj));
-                }
+
             });
         }
         
@@ -423,7 +401,27 @@ namespace Habby.Business
                 localData.processType = PurchaseProcessType.waitValidatine;
                 localData.Save();
 
-                ValidationObject(pItem, localData.lastProduct);
+                var obj = localData.lastProduct;
+                var torderitem = new ProductOrder()
+                {
+                    gameItemId = obj.gameItemId,
+                    storeId = obj.storeId,
+                    productType = obj.productType,
+
+                    orderId = obj.lastOrderId,
+                    transactionId = pItem.transactionID,
+                    currency = pItem.metadata.isoCurrencyCode,
+                    currencyMoney = pItem.metadata.localizedPrice.ToString(CultureInfo.InvariantCulture),
+                    region = iap.GetCountryCode(),
+                    channelCode = iap.Channel,
+                    receipt = pItem.receipt,
+
+                    creatTime = System.DateTime.UtcNow.Ticks / 10000,
+                };
+
+                ValidationOrderManager.AddValidatinoProduct(torderitem);
+
+                ValidationObject(torderitem.orderId);
 
             }
             else
@@ -450,11 +448,20 @@ namespace Habby.Business
         
         public Product WithID(string pId)
         {
-            if (!iap.InitedPurchase)
+            try
             {
-                IAPLog.LogError($" iap.InitedPurchase = {iap.InitedPurchase}");
+                if (!iap.InitedPurchase)
+                {
+                    IAPLog.LogError($" iap.InitedPurchase = {iap.InitedPurchase}");
+                }
+                return iap.WithID(pId);
             }
-            return iap.WithID(pId);
+            catch (Exception e)
+            {
+                IAPLog.LogError(e);
+            }
+
+            return null;
         }
         
         public bool DoIAPPurchase(ProductObject pItem)
@@ -475,7 +482,7 @@ namespace Habby.Business
             
             IAPLog.Log($"Start GetOrderId. ProductId = {tproduct.definition.id},  ProductType = {tproduct.definition.type}");
             
-            RestWaitCount();
+
             SetCurPurchaseing(pItem);
             StartPurchase();
 
@@ -581,6 +588,32 @@ namespace Habby.Business
                     customClientData.Add(item.Key, item.Value);
                 }
             }
+        }
+        
+        public void Validation(string pOrderId, ValidatinoEvent pOnComplete)
+        {
+            if (!InitedPurchase)
+            {
+                IAPLog.LogError($"Validation failed. InitedPurchase = {InitedPurchase}");
+                pOnComplete?.Invoke(null, (int) ValidationStatusCode.localError, null);
+                return;
+            }
+            ValidationOrderManager.Validation(pOrderId,pOnComplete);
+        }
+
+        public List<string> GetList()
+        {
+            return ValidationOrderManager.GetOrderList();
+        }
+        
+        public void ClearOrderFiles()
+        {
+            ValidationOrderManager.ClearOrderFiles();
+        }
+        
+        internal void DeleteOrderFile(string pOrderId)
+        {
+            ValidationOrderManager.DeleteOrderFile(pOrderId);
         }
 
     }

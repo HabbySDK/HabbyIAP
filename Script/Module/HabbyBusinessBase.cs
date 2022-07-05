@@ -139,7 +139,7 @@ namespace Habby.Business
         {
             var uid = IAPHttp.EscapeURL(Setting.userId);
 
-            RequestPathObject treqpath = new RequestPathObject(Setting.serverUrl, $"users/{uid}/gameProducts");
+            RequestPathObject treqpath = new RequestPathObject($"users/{uid}/gameProducts");
             if (ids != null && ids.Length > 0)
             {
                 treqpath.AddArray(productsKey, ids);
@@ -160,7 +160,7 @@ namespace Habby.Business
 
     public sealed class RequestPathObject : RequestPathObjectBase
     {
-        public RequestPathObject(string server, string pPath) : base(server, pPath)
+        public RequestPathObject(string pPath) : base(IAPManager.Instance.Setting.serverUrl, pPath)
         {
             
         }

@@ -72,7 +72,7 @@ namespace Habby.Business
         {
             //users/:userId/battlePasses
             var uid = IAPHttp.EscapeURL(Setting.userId);
-            RequestPathObject treqpath = new RequestPathObject(Setting.serverUrl, $"users/{uid}/battlePasses");
+            RequestPathObject treqpath = new RequestPathObject($"users/{uid}/battlePasses");
             treqpath.AddKeyword("battlePassType",type);
 
             IAPHttp.Instance.StartGetResponse<DefaultResponse<BattlePassInfo[]>>(treqpath.GetRequestUrl(), null,
@@ -91,7 +91,7 @@ namespace Habby.Business
    
             };
 
-            RequestPathObject treqpath = new RequestPathObject(Setting.serverUrl, $"users/{uid}/battlePasses/{bid}");
+            RequestPathObject treqpath = new RequestPathObject($"users/{uid}/battlePasses/{bid}");
             treqpath.AddKeyword("action", "addValueByExchange");
 
             IAPHttp.Instance.StartPatchSend<DefaultResponse<BattlePassInfo>>(treqpath.GetRequestUrl(), treq,
@@ -104,7 +104,7 @@ namespace Habby.Business
             var uid = IAPHttp.EscapeURL(Setting.userId);
             var bid = IAPHttp.EscapeURL(id);
 
-            RequestPathObject treqpath = new RequestPathObject(Setting.serverUrl, $"users/{uid}/battlePasses/{bid}");
+            RequestPathObject treqpath = new RequestPathObject($"users/{uid}/battlePasses/{bid}");
             treqpath.AddKeyword("action", "receiveNormal");
 
             var treq = new
@@ -124,7 +124,7 @@ namespace Habby.Business
             var uid = IAPHttp.EscapeURL(Setting.userId);
             var bid = IAPHttp.EscapeURL(id);
 
-            RequestPathObject treqpath = new RequestPathObject(Setting.serverUrl, $"users/{uid}/battlePasses/{bid}");
+            RequestPathObject treqpath = new RequestPathObject($"users/{uid}/battlePasses/{bid}");
             treqpath.AddKeyword("action", "receiveAddition");
 
             var treq = new

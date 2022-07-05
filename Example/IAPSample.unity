@@ -849,9 +849,6 @@ MonoBehaviour:
   temp: {fileID: 2058961426}
   list: {fileID: 93867984}
   products:
-  - gameItemId: com.habby.memorytool.test1
-    storeId: com.habby.memorytool.test1
+  - gameItemId: 1
+    storeId: com.habby.kinjarun_gem_1
     productType: 0
-  - gameItemId: com.habby.memorytool.test2
-    storeId: com.habby.memorytool.test2
-    productType: 2

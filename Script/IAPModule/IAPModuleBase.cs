@@ -97,6 +97,7 @@ namespace Habby.Business
 
         public Product WithID(string pId)
         {
+            if (controller == null || controller.products == null) return null;
             return controller.products.WithID(pId);
         }
 

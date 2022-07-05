@@ -14,7 +14,7 @@ namespace Habby.Business
         {
             var uid = IAPHttp.EscapeURL(Setting.userId);
             var tid = IAPHttp.EscapeURL(id);
-            RequestPathObject treqpath = new RequestPathObject(Setting.serverUrl, $"users/{uid}/activities/{tid}");
+            RequestPathObject treqpath = new RequestPathObject($"users/{uid}/activities/{tid}");
             treqpath.AddKeyword("currency",Setting.defaultActiveStoreId);
 
             IAPHttp.Instance.StartGetResponse<DefaultResponse<ActivityInfo>>(treqpath.GetRequestUrl(), null,
@@ -60,7 +60,7 @@ namespace Habby.Business
         {
             var uid = IAPHttp.EscapeURL(Setting.userId);
             var tid = IAPHttp.EscapeURL(id);
-            RequestPathObject treqpath = new RequestPathObject(Setting.serverUrl, $"users/{uid}/activities/{tid}");
+            RequestPathObject treqpath = new RequestPathObject($"users/{uid}/activities/{tid}");
             treqpath.AddKeyword("action", pAction);
 
             IAPHttp.Instance.StartPatchSend<DefaultResponse<ActivityInfo>>(treqpath.GetRequestUrl(), pBody,

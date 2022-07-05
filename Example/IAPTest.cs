@@ -104,6 +104,13 @@ namespace Habby.Business
                 //error
                 }
             };
+
+            var tlist = Habby.Business.IAPManager.Instance.GetList();
+            
+            Debug.Log(tlist);
+            
+            Habby.Business.IAPManager.Instance.ClearOrderFiles();
+            
         }
 
         void TestMethod()

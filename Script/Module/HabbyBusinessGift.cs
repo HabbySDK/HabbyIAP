@@ -17,7 +17,7 @@ namespace Habby.Business
         {
             var uid = IAPHttp.EscapeURL(Setting.userId);
 
-            RequestPathObject treqpath = new RequestPathObject(Setting.serverUrl, $"users/{uid}/gifts");
+            RequestPathObject treqpath = new RequestPathObject($"users/{uid}/gifts");
             treqpath.AddKeyword("action", pActon);
             treqpath.AddKeyword("gameProductId", pId);
 
@@ -52,7 +52,7 @@ namespace Habby.Business
         {
             var uid = IAPHttp.EscapeURL(Setting.userId);
 
-            RequestPathObject treqpath = new RequestPathObject(Setting.serverUrl, $"users/{uid}/gifts");
+            RequestPathObject treqpath = new RequestPathObject($"users/{uid}/gifts");
             treqpath.AddArray("gameProductIds", ids);
             treqpath.AddKeyword("giftType", giftType);
             treqpath.AddKeyword("giftSubType", giftSubType);
