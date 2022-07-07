@@ -49,6 +49,8 @@
             public int level;
             public string type;// 一般前30级为normal，后面为additional(补充奖励)
             public long startValue;// 开启当前等级所需的经验
+            public long levelValue;//进度
+            public long levelMaxValue;//最大值
 
             public PassItem[] passes;
         }
@@ -62,6 +64,7 @@
         public long endTime; // 结束时间
         public long countdownUntil;//倒计时结束
         public long currentValue;// 当前经验
+        public long maxValue;// 最大经验
         public int currentLevel;// 当前等级
         public bool purchased;// 是否已经购买
 

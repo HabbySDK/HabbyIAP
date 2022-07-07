@@ -19,6 +19,7 @@
         public long baseValue;////基数值，用来计算当前是几倍超值
         
         public long createTime;//创建时间
+        public long endTime;//结束时间 7.6
         public bool purchasable;// 是否可以购买
         public int round;// 第几轮
         

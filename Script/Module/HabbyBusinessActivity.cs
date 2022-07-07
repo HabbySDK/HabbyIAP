@@ -9,33 +9,58 @@ namespace Habby.Business
         public HabbyBusinessActivity(IAPSetting pSetting) : base(pSetting)
         {
         }
-
-        public void GetActivity(string id, HttpEvent<ActivityInfo> onComplete)
+        
+        /// <summary>
+        /// Specify activity information
+        /// </summary>
+        /// <param name="pActivityId">activity id</param>
+        /// <param name="pDayIndex">dayIndex</param>
+        /// <param name="onComplete">callback</param>
+        /// <returns></returns>
+        public void GetActivity(string pActivityId,int pDayIndex, HttpEvent<ActivityInfo> onComplete)
         {
             var uid = IAPHttp.EscapeURL(Setting.userId);
-            var tid = IAPHttp.EscapeURL(id);
+            var tid = IAPHttp.EscapeURL(pActivityId);
             RequestPathObject treqpath = new RequestPathObject($"users/{uid}/activities/{tid}");
             treqpath.AddKeyword("currency",Setting.defaultActiveStoreId);
+            treqpath.AddKeyword("dayIndex",pDayIndex.ToString());
 
             IAPHttp.Instance.StartGetResponse<DefaultResponse<ActivityInfo>>(treqpath.GetRequestUrl(), null,
                 (response, error, errorcode) =>
                 {
-                    CallOnCompleteAndCache($"Activity-{id}", response, onComplete, errorcode, error);
+                    CallOnCompleteAndCache($"Activity-{pActivityId}", response, onComplete, errorcode, error);
                 }, 60,
                 IAPHttp.IsParamsValid(uid, tid));
         }
-
-        public void GetLevelReward(string id, string pLevel, HttpEvent<ActivityInfo> onComplete)
+        
+        /// <summary>
+        /// Get level rewards
+        /// </summary>
+        /// <param name="pActivityId">activity id</param>
+        /// <param name="pLevel">level</param>
+        /// <param name="pDayIndex">dayIndex</param>
+        /// <param name="onComplete">callback</param>
+        /// <returns></returns>
+        public void GetLevelReward(string pActivityId, string pLevel,int pDayIndex, HttpEvent<ActivityInfo> onComplete)
         {
             var tbody = new
             {
                 level = pLevel,
+                dayIndex = pDayIndex,
             };
 
-            SendActivityAction(id, tbody, "receiveProgressAward", onComplete);
+            SendActivityAction(pActivityId, tbody, "receiveProgressAward", onComplete);
         }
-
-        public void GetTaskReward(string id, int pDayIndex, string pTaskId, HttpEvent<ActivityInfo> onComplete)
+        
+        /// <summary>
+        /// Get task rewards
+        /// </summary>
+        /// <param name="pActivityId">activity id</param>
+        /// <param name="pDayIndex">dayIndex</param>
+        /// <param name="pTaskId">task id</param>
+        /// <param name="onComplete">callback</param>
+        /// <returns></returns>
+        public void GetTaskReward(string pActivityId, int pDayIndex, string pTaskId, HttpEvent<ActivityInfo> onComplete)
         {
             var tbody = new
             {
@@ -43,17 +68,26 @@ namespace Habby.Business
                 taskId = pTaskId,
             };
 
-            SendActivityAction(id, tbody, "receiveTaskAward", onComplete);
+            SendActivityAction(pActivityId, tbody, "receiveTaskAward", onComplete);
         }
-
-        public void UpdateActivityExchange(string id, string pExchange, HttpEvent<ActivityInfo> onComplete)
+        
+        /// <summary>
+        /// activityExchange
+        /// </summary>
+        /// <param name="pActivityId">activity id</param>
+        /// <param name="pExchange">task id</param>
+        /// <param name="pDayIndex">dayIndex</param>
+        /// <param name="onComplete">callback</param>
+        /// <returns></returns>
+        public void UpdateActivityExchange(string pActivityId, string pExchange, int pDayIndex, HttpEvent<ActivityInfo> onComplete)
         {
             var tbody = new
             {
                 exchangeId = pExchange,
+                dayIndex = pDayIndex,
             };
 
-            SendActivityAction(id, tbody, "activityExchange", onComplete);
+            SendActivityAction(pActivityId, tbody, "activityExchange", onComplete);
         }
 
         protected void SendActivityAction(string id, object pBody, string pAction, HttpEvent<ActivityInfo> onComplete)
